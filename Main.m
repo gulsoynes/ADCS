@@ -1,0 +1,189 @@
+%2022-2023 GRADUATION PROJECT : SINGLE FRAME and KALMAN FILTERING BASE
+%METHODS for ATTITUDE DETERMINATION
+
+%This code contains caculations of Earth's magnetic field, sun and nadir
+%direction vectors in body and reference frame.
+%Second part contains TRIAD method, q method and Kalman Filtering.
+
+%%%Written by Neslihan Gülsoy
+
+%Update : The qtoEuler and CtoEuler give same results
+% 
+clear; clc; close all;
+tic
+
+%Period of satellite is almost 1.5 hours, so iterarion number is 2*T
+%Parameters
+p = params();
+
+%Initial State
+q = [1;0;0;0];
+w = [.0002; .0003; 0.002];
+% Satellite Dynamics 
+[q,w] = EoM(q, w, p.sat.I, p.sat.mass, p.dt);
+
+%%
+%Sensor Modelling
+[H_o, H_b] = Magnetometer(Ro,inc,C,sigma_h,time,N);
+[S_o, S_b, S_ECI] = SunSensor(omega,Omega,inc,T,C,sigma_s,time,N);
+[N_o, N_b] = HorizonSensor(Re,Ro,omega,Omega,T,C,sigma_n,time,N);
+
+for i = 1:length(C)
+[s_i(i).a, s_b(i).a] = star_trackers_modelling(RA_deg,DE_deg,C(i).a);
+end
+
+
+%% Only Nadir and Magnetometer
+str = 'Nadir-Magnetometer'
+for i = 1:N+1
+    
+    sigma = [std(H_b(:,i)) + std(H_o(:,i));
+        std(N_b(:,i)) + std(N_o(:,i))];
+    sgn = sign(q_true(:,i));
+     
+    b = [N_b(:,i), H_b(:,i)];
+    r = [N_o(:,i), H_o(:,i)];
+    
+    [q_TRIAD(:,i), P_Triad(i).a ] = TRIAD(r,b,sigma,sgn);
+    Euler_ang_TRIAD(:,i) = qtoEuler(q_TRIAD(:,i));
+   
+    [q_qMethod(:,i), P_qMethod(i).a] = qMethod(r,b,sigma,sgn);
+    Euler_ang_qMethod(:,i) = qtoEuler(q_qMethod(:,i));
+    
+end
+
+%% Only Sun and Magnetometer
+str = 'Sun-Magnetometer'
+for i = 1:N+1
+    
+    sigma = [std(S_b(:,i)) + std(S_o(:,i));
+        std(H_b(:,i)) + std(H_o(:,i))];
+       
+    sgn = sign(q_true(:,i));
+    
+    b = [S_b(:,i), H_b(:,i)];
+    r = [S_o(:,i), H_o(:,i)];
+    
+    [q_TRIAD(:,i), P_Triad(i).a ] = TRIAD(r,b,sigma,sgn);
+    Euler_ang_TRIAD(:,i) = qtoEuler(q_TRIAD(:,i));
+ 
+    [q_qMethod(:,i), P_qMethod(i).a] = qMethod(r,b,sigma,sgn);
+    Euler_ang_qMethod(:,i) = qtoEuler(q_qMethod(:,i));
+end
+
+%% Only Sun and Nadir Vectors Obs.
+str = 'Sun-Nadir'
+for i = 1:N+1
+    
+    sigma = [std(S_b(:,i)) + std(S_o(:,i));
+        std(N_b(:,i)) + std(N_o(:,i))];
+    sgn = sign(q_true(:,i));
+    
+    b = [S_b(:,i), N_b(:,i)];
+    r = [S_o(:,i), N_o(:,i)];
+    
+    [q_TRIAD(:,i), P_Triad(i).a, A_TRIAD(i).a] = TRIAD(r,b,sigma,sgn);
+    Euler_ang_TRIAD(:,i) = qtoEuler(q_TRIAD(:,i));
+    
+    [q_qMethod(:,i), P_qMethod(i).a] = qMethod(r,b,sigma,sgn);
+    Euler_ang_qMethod(:,i) = qtoEuler(q_qMethod(:,i));
+end
+
+%% q Method All Combinations 
+str = 'Sun-Magnetometer-Nadir'
+for i = 1:N+1
+    
+    sigma = [std(S_b(:,i)) + std(S_o(:,i));
+        std(N_b(:,i)) + std(N_o(:,i));
+        std(H_b(:,i)) + std(H_o(:,i))];
+       
+    sgn = sign(q_true(:,i));
+    
+    b = [S_b(:,i), H_b(:,i), N_b(:,i)];
+    r = [S_o(:,i), H_o(:,i), N_o(:,i)];
+ 
+    [q_qMethod3(:,i)] = qMethod3(r,b,sigma,sgn);
+    Euler_ang_qMethod3(:,i) = qtoEuler(q_qMethod3(:,i));
+end
+
+RMSE_q_Method3 = sqrt( sum( abs( rad2deg(Euler_ang_true)' - rad2deg(Euler_ang_qMethod3)' ).^2 ) / (length(Euler_ang_true)) )
+%% Star Trackers
+str = 'Star_Trackers'
+
+for i = 1:N+1 
+    sigma = [std(s_b(i).a) + std(s_i(i).a)]';
+       
+    sgn = sign(q_true(:,i));
+    
+    b = [s_b(i).a];
+    r = [s_i(i).a];
+ 
+    [q_qMethod_star(:,i)] = qMethod3(r,b,sigma,sgn);
+    Euler_ang_qMethod3(:,i) = qtoEuler(q_qMethod_star(:,i));
+
+end
+
+RMSE_q_Method3 = sqrt( sum( abs( rad2deg(Euler_ang_true)' - rad2deg(Euler_ang_qMethod3)' ).^2 ) / (length(Euler_ang_true)) )
+%% Single Frame Aided EKF
+tic
+[X,P_EKF] = EKF_plus(q_TRIAD,Euler_ang_TRIAD,w_angular,P_Triad,N);
+[X2,P_q] = EKF_plus(q_qMethod,Euler_ang_qMethod,w_angular,P_qMethod,N);
+n = length(X);
+for i = 1:n
+    Euler_ang_EKF(:,i) = qtoEuler(X(1:4,i));
+    Euler_ang_EKF2(:,i) = qtoEuler(X2(1:4,i));
+end
+% Root Mean Square Error (RMSE)
+toc
+%%
+RMSE_TRIADq = sqrt( sum( abs((q_true)' - (q_TRIAD)' ).^2 ) / n )
+
+RMSE_q_Methodq = sqrt( sum( abs( (q_true)' - (q_qMethod)' ).^2 ) / n )
+
+RMSE_TRIAD_EKFq = sqrt( sum( abs( (q_true)' - (X(1:4,:))' ).^2 ) / n )
+
+RMSE_qMethod_EKF2q = sqrt( sum( abs( (q_true)' - (X2(1:4,:))' ).^2 ) / n )
+
+%%
+RMSE_TRIAD = sqrt( sum( abs( rad2deg(Euler_ang_true)' - rad2deg(Euler_ang_TRIAD)' ).^2 ) / n )
+
+RMSE_q_Method = sqrt( sum( abs( rad2deg(Euler_ang_true)' - rad2deg(Euler_ang_qMethod)' ).^2 ) / n )
+
+% RMSE_TRIAD_EKF = sqrt( sum( abs( rad2deg(Euler_ang_true)' - rad2deg(Euler_ang_EKF)' ).^2 ) / n )
+% 
+% RMSE_qMethod_EKF2 = sqrt( sum( abs( rad2deg(Euler_ang_true)' - rad2deg(Euler_ang_EKF2)' ).^2 ) / n )
+
+
+ %%
+ PLOTTING(n,time,str,rad2deg(Euler_ang_EKF),...
+    rad2deg(Euler_ang_TRIAD),...
+    rad2deg(Euler_ang_qMethod),...
+    rad2deg(Euler_ang_true))
+%%
+figure(1)
+plot(  time(1:n),rad2deg(Euler_ang_EKF(1,1:n)),'.--')
+hold on
+plot(  time(1:n), rad2deg(Euler_ang_TRIAD(1,1:n)),'.--')
+hold on
+plot(  time(1:n), rad2deg(Euler_ang_qMethod(1,1:n)),'.--')
+hold on
+plot(  time(1:n), rad2deg(Euler_ang_true(1,1:n)))
+ax=gca;
+ax.YGrid = 'on';
+ax.XLim = [0   time(n)];
+xlabel('$ t $ : Time $(s)$','Interpreter', 'latex ')
+ylabel('$ \phi$ : Roll Angle $(^{\circ})$','Interpreter','latex')
+lg = legend(' $ EKF $ ',  ' $TRIAD $ ' ,'$ q-Method $ ','True','Interpreter','latex');
+title(lg, str)
+title(str,'Interpreter', 'latex')
+
+% Parameter definition for code
+function params = params()
+  params.dt = 0.1;               % zaman adımı (s)
+  params.sat.I = diag([12, 10, 8]); % atalet matrisi (kg*m^2)
+  params.sat.mass = 50;          % kg
+  params.sensor.gyro_noise = 1e-5;
+  params.filter.Q = 1e-6 * eye(6);
+  params.filter.R = 1e-4 * eye(3);
+  % ... diğer parametreler
+end
