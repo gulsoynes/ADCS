@@ -13,18 +13,24 @@ clear; clc; close all;
 tic
 
 %Period of satellite is almost 1.5 hours, so iterarion number is 2*T
-%Parameters
+%Parameters for simulation
 p = params();
 
 %Initial State
 q = [1;0;0;0];
 w = [.0002; .0003; 0.002];
-% Satellite Dynamics 
-[q,w] = EoM(q, w, p.sat.I, p.sat.mass, p.dt);
+% Satellite Dynamics
+%time = linspace (0 , N*delt , N+1);
+X = [q;w];
+
+time = 
+X = dynamics(X, p.sat.I, p.sat.Moment, p.dt);
 
 %%
 %Sensor Modelling
-[H_o, H_b] = Magnetometer(Ro,inc,C,sigma_h,time,N);
+%[H_o, H_b] = Magnetometer(p.Ro,p.sat.inc,,sigma_h,time,N);
+
+%%
 [S_o, S_b, S_ECI] = SunSensor(omega,Omega,inc,T,C,sigma_s,time,N);
 [N_o, N_b] = HorizonSensor(Re,Ro,omega,Omega,T,C,sigma_n,time,N);
 
@@ -39,6 +45,7 @@ for i = 1:N+1
     
     sigma = [std(H_b(:,i)) + std(H_o(:,i));
         std(N_b(:,i)) + std(N_o(:,i))];
+    
     sgn = sign(q_true(:,i));
      
     b = [N_b(:,i), H_b(:,i)];
@@ -179,11 +186,38 @@ title(str,'Interpreter', 'latex')
 
 % Parameter definition for code
 function params = params()
-  params.dt = 0.1;               % zaman adımı (s)
-  params.sat.I = diag([12, 10, 8]); % atalet matrisi (kg*m^2)
+  params.dt = 0.1;              %Sample time (s)
+  params.sat.I = diag([2.1e-3, 2e-3, 1.9e-3]); % atalet matrisi (m^4)
   params.sat.mass = 50;          % kg
+  params.sat.Moment = 5e-10;      %The disturbance torque acting on the satellite (N.m)
   params.sensor.gyro_noise = 1e-5;
   params.filter.Q = 1e-6 * eye(6);
   params.filter.R = 1e-4 * eye(3);
   % ... diğer parametreler
+
+% Sensor Parameters
+
+%Parameters for Sensors
+params.sensor.magneto_sd = .008;     %The standard deviation of magnetometer error
+params.sensor.sun_sd = .002;     %The standard deviation of each Sun sensor noise
+params.sensor.nadir_sd = .006;     %The standard deviation of each Horizon sensor noise
+
+
+%Orbital Elements
+h = 600e3;                      %Altitude of Satellite (m)
+Re = 6378.140e3;                %Earth radius on Equator (m)
+params.Ro = ( Re + h );                %Distance Between Satellite and Earth (m)
+
+mu = 3.98601e14;        %Earth Gravitational Constant (m^3/s^2)
+params.Wo = sqrt( mu / ( Ro ^ 3 ) );   %Angular Velocity of Orbit (rad/s)
+
+params.sat.inc = 89; %97.65;                       %Otbit Inclination (deg)
+params.sat.RAAN = 171.8428;                %RAAN (deg)
+params.sat.argp = 0;                      %Argument of perigee (deg)
+params.sat.ecc = 0; % Eccentricity 
+params.sat.arlat_0 = 10;    % Initial argument of latitude (deg)
+
+%Iteration Parameters   
+params.N = 1.5 * (60 * 60) * 2;
+%time = linspace (0 , N*delt , N+1);
 end
