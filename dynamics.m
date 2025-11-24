@@ -1,4 +1,4 @@
-function [X] = dynamics(X, J, M, dt)
+function [X, C] = dynamics(X, J, M, dt)
 % This function handles spacecraft dynamics using equation of motion for given paramaters. Equations
 % from refence book. And simple integration method is used, can be
 % improved. Don't forget the check parameters
@@ -15,11 +15,10 @@ q1 = X(1); q2 = X(2); q3 = X(3); q0 = X(4); %Scalar part of quaternion
 
     %Quaternion Rates (1/s)
     
-    q0_dot = -.5 * ( q1 * w_x + q2 * w_y + q3 * w_z );
     q1_dot =  .5 * ( q0 * w_x - q3 * w_y + q2 * w_z );
     q2_dot =  .5 * ( q3 * w_x + q0 * w_y - q1 * w_z );
     q3_dot = -.5 * ( q2 * w_x - q1 * w_y - q0 * w_z );
-    
+    q0_dot = -.5 * ( q1 * w_x + q2 * w_y + q3 * w_z );
     %Quaternions
     
     q1 = q1 + dt * q1_dot;
@@ -44,4 +43,9 @@ q = [q1; q2; q3; q0];
 q = q ./ norm(q);
 w_angular = [w_x; w_y; w_z];
 X = [q; w_angular];
+
+% Tranformation matrix from ECI to Body 
+C = [(q0^4 + q1^2 - q2^2 - q3^2), 2*(q1*q2 + q3*q0), 2*(q1*q3 - q2*q0);
+    2*(q1*q2 - q3*q0), q0^2-q1^2+q2^2-q3^2, (2*(q2*q3 +q1*q0));
+    2*(q1*q3 + q2*q0), 2*(q2*q3 - q1*q0), (q0^2 - q1^2 -q2^2 + q3^2)];
 end

@@ -6,7 +6,9 @@ function [X,P] = EKF_plus(q_sing,Euler_ang_sing,w_angular,P_sing,N)
 % Satellite Characteristic
 delt = .1; J_x = 2.1e-3;
 J_y = 2e-3;
-J_z = 1.9e-3; Nt = 3.6e-10;
+J_z = 1.9e-3; 
+J = diag(Jx, J_y, J_z);
+Nt = 3.6e-10;
 
 P(1).a = 100 * eye(7);  %Initial Cov Matrix
 H = eye(7); %Measurement Matrix
@@ -20,7 +22,7 @@ X(:,1) = [q_sing(:,1); w_angular(:,1) + 0.006*randn(3,1)];
 for k = 1:N
     %EXTRAPOLATION - PREDICTION of STATE
     F = F_Matrix(X(:,k),delt,J_x,J_y,J_z); %Linearized Transition Matrix
-    X(:,k+1) = True_States2(X(:,k),J_x,J_y,J_z,Nt,delt);
+    X(:,k+1) = dynamics(X(:,k),J,Nt,delt);
     
     %MEASUREMENT MODEL From TRIAD
     v = [0;0;0;0;.006; .006; .006] .* randn(7,1);
