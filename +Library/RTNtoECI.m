@@ -1,6 +1,6 @@
-function Tr = PQWtoECI(orb, t)
-% funciton gives transformation matrix from orbit frame to ECI
-% Tr depends on RAAN, inc, argp and true anomaly
+function Tr_RTN2ECI = RTNtoECI(orb, t)
+% funciton gives transformation matrix from orbit frame (RTN) to ECI
+    % RTN Frame: X=Up, Y=Vel, Z=Normal
 wo = orb.wo;
 % Convert angles to radians
 inc = deg2rad(orb.inc);         % Geodetic inclination
@@ -18,12 +18,11 @@ nu = mod(nu, 2*pi);
              0   cos(inc)  -sin(inc);
              0  sin(inc)  cos(inc)];
 
-    R3_w_nu = [ cos(argp+nu)  -sin(argp+nu)   0;
+    R3_u = [ cos(argp+nu)  -sin(argp+nu)   0;
                sin(argp+nu)  cos(argp+nu)   0;
                  0             0             1];
 
-    % PQW → ECI
-    Tr = R3_RAAN * R1_i * R3_w_nu;
-
+% RTN (X=Radial/Up) -> ECI Dönüşümü
+    Tr_RTN2ECI = R3_RAAN * R1_i * R3_u;
 end
 

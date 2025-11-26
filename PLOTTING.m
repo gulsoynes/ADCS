@@ -49,4 +49,68 @@ xlabel('$ t $ : Time $(s)$','Interpreter', 'latex ')
 ylabel('$ \psi$ : Yaw Angle $(^{\circ})$','Interpreter','latex')
 lg = legend(' $ EKF $ ', ' $TRIAD $ ' , '$ q-Method $ ','True' ,'Interpreter','latex');
 title(lg, str)
+
+
+
+figure(2) %Quaternion Representation
+subplot(4,1,1)
+plot(  p.tspan, q_TRIAD(1,:),'.--')
+hold on
+plot(  p.tspan, q_qMethod(1,:),'.--')
+hold on
+plot(  p.tspan, X(1,:))
+ax=gca;
+ax.YGrid = 'on';
+ax.XLim = [0   p.tspan(end)];
+xlabel('$ t $ : Time $(s)$','Interpreter', 'latex ')
+ylabel('$ \phi$ : Roll Angle $(^{\circ})$','Interpreter','latex')
+lg = legend(' $ EKF $ ',  ' $TRIAD $ ' ,'$ q-Method $ ','True','Interpreter','latex');
+title(lg, str)
+title(str,'Interpreter', 'latex')
+
+subplot(4,1,2)
+plot(  p.tspan, q_TRIAD(2,:),'.--')
+hold on
+plot(  p.tspan, q_qMethod(2,:),'.--')
+hold on
+plot(  p.tspan, X(2,:))
+ax=gca;
+ax.YGrid = 'on';
+ax.XLim = [0   p.tspan(end)];
+xlabel('$ t $ : Time $(s)$','Interpreter', 'latex ')
+ylabel('$ \phi$ : Roll Angle $(^{\circ})$','Interpreter','latex')
+lg = legend(' $ EKF $ ',  ' $TRIAD $ ' ,'$ q-Method $ ','True','Interpreter','latex');
+title(lg, str)
+title(str,'Interpreter', 'latex')
+
+subplot(4,1,3)
+plot(  p.tspan, q_TRIAD(3,:),'.--')
+hold on
+plot(  p.tspan, q_qMethod(3,:),'.--')
+hold on
+plot(  p.tspan, X(3,:))
+ax=gca;
+ax.YGrid = 'on';
+ax.XLim = [0   p.tspan(end)];
+xlabel('$ t $ : Time $(s)$','Interpreter', 'latex ')
+ylabel('$ \phi$ : Roll Angle $(^{\circ})$','Interpreter','latex')
+lg = legend(' $ EKF $ ',  ' $TRIAD $ ' ,'$ q-Method $ ','True','Interpreter','latex');
+title(lg, str)
+title(str,'Interpreter', 'latex')
+
+subplot(4,1,4)
+plot(  p.tspan, q_TRIAD(4,:),'.--')
+hold on
+plot(  p.tspan, q_qMethod(4,:),'.--')
+hold on
+plot(  p.tspan, X(4,:))
+ax=gca;
+ax.YGrid = 'on';
+ax.XLim = [0   p.tspan(end)];
+xlabel('$ t $ : Time $(s)$','Interpreter', 'latex ')
+ylabel('$ \phi$ : Roll Angle $(^{\circ})$','Interpreter','latex')
+lg = legend(' $ EKF $ ',  ' $TRIAD $ ' ,'$ q-Method $ ','True','Interpreter','latex');
+title(lg, str)
+title(str,'Interpreter', 'latex')
+
  end

@@ -1,6 +1,7 @@
 function [q] = Ctoq(C, sgn)
 %%% Ref:Markeley, page 48
 % %Quaternions expressed in terms of direction cosines
+% since q and -q denote the same rotation sign of true quaternion is used.
 q0 = sqrt(trace(C) + 1) / 2;
 q1 = sqrt(1 + C(1,1) - C(2,2) - C(3,3)) / 2;
 q2 = sqrt(1 - C(1,1) + C(2,2) - C(3,3)) / 2;

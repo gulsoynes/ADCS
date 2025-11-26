@@ -6,7 +6,7 @@ yaw = atan2(C(1,2) , C(1,1));
 pitch = -asin(C(1,3));
 %roll = atan2(C(3,1) , -C(3,2));
 roll = atan2(C(2,3), C(3,3));
-Euler = [roll, pitch, yaw]';
+Euler = [roll, pitch, yaw];
 
 end
 

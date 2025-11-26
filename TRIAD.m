@@ -1,4 +1,4 @@
-function [q_TRIAD, Cov, A_est] = TRIAD(r,b, sigma, sgn)
+function [A_est, Cov] = TRIAD(r,b, sigma)
 % Algorithm is written by
 %  Markley, F. L., “Attitude Determination Using Two Vector Measurements,” 1998
 
@@ -23,7 +23,6 @@ w = [w1 w2 w3]; %TRIAD frame in terms of observation vectors in body
 
 A_est = v * w'; %Estimated Attitude Matrix with TRIAD
 A_est = transpose(A_est);
-q_TRIAD =  Ctoq(A_est, sgn);
 
 %COVARIANCE MATRIX of TRIAD 
 % Shuster, M. D., and Oh, S. D., “Three-axis attitude determination from vector observations,” Journal of Guidance and Control,
