@@ -44,7 +44,7 @@ v_eci = Tr_RTN2ECI * v_or;
 % Initial position and velocity vectors of satellite
 
 %Orbit Propagation
-orbit = orbit_propagator(p.tspan, [r_eci; v_eci]);   %Edit considering orbital elements
+orbit = Library.orbit_propagator(p.tspan, [r_eci; v_eci]);   %Edit considering orbital elements
 pos = orbit(:,1:3)'; % position vector of satellite
 vel = orbit(:,4:6)'; % velocity vector of satellite
 
@@ -54,29 +54,30 @@ X = [q;w];
 % Iterate for n times orbit time = N : 2*T_orb
 for i = 1:p.N
     % Find quaternion and angular velocity
-    X(:,i+1) = dynamics(X(:,i), p.sat.I, p.sat.Moment, p.orb, p.dt);    
+    X(:,i+1) = Library.dynamics(X(:,i), p.sat.I, p.sat.Moment, p.orb, p.dt);    
 end
 
 for i = 1:p.N+1
-    Euler_ang_true(:,i) = qtoEuler(X(1:4, i));
-    C_BwrtO(i).a = qtoC(X(1:4,i));
+    Euler_ang_true(:,i) = Library.qtoEuler(X(1:4, i));
+    C_BwrtO(i).a = Library.qtoC(X(1:4,i));
     % Sensor measurement
     t = p.tspan(i);
     %[w_gyro(:,i), bias(:,i+1)] = gyro_measurement(X(5:7,i), bias(:,i), p.sensor, p.dt);
 
     [b_o(:,i), b_b(:,i), s_o(:,i), s_b(:,i), n_o(:,i), n_b(:,i)]  =...
-        sensor_model(pos(:,i), vel(:,i), p.orb, p.sensor, C_BwrtO(i).a, t);
+        Library.sensor_model(pos(:,i), vel(:,i), p.orb, p.sensor, C_BwrtO(i).a, t);
 end
 
 %%
 figure(1)
-plot(rad2deg(Euler_ang_true(1,:)))
+plot(p.tspan, rad2deg(Euler_ang_true(1,:)))
 hold on
-plot(rad2deg(Euler_ang_true(2,:)))
+plot(p.tspan, rad2deg(Euler_ang_true(2,:)))
 hold on
-plot(rad2deg(Euler_ang_true(3,:)))
+plot(p.tspan, rad2deg(Euler_ang_true(3,:)))
 legend("Roll", "Pitch", "Yaw")
-
+xticks([0, p.orb.T/2, p.orb.T, 1.5*p.orb.T, 2*T])
+xticklabels({'0','T/2','T','3/2T','2T','2\pi','3\pi'})
 %% Only Sun and Magnetometer
 str = 'Sun-Magnetometer'
 for i = 1:p.N+1
