@@ -1,4 +1,4 @@
-function [X_upd,P_upd, bias_upd] = kf_update(X_pred, P_pred, z, R)
+function [X_upd,P_upd, bias_upd] = MEKF_update(X_pred, P_pred, z, R)
 % Inputs 
 % z_quad : Measured quaternion from TRIAD or q-Method
 
